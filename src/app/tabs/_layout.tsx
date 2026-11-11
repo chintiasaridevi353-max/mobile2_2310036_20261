@@ -1,0 +1,99 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+
+export default function TabLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        // 1. Warna saat menu dipilih (Aktif)
+        tabBarActiveTintColor: "#8f4670",
+
+        // 2. Warna saat menu tidak dipilih (Tidak Aktif)
+        tabBarInactiveTintColor: "#a31068",
+
+        // 3. Penataan gaya fisik bilah Tab Bar bawah
+        tabBarStyle: {
+          backgroundColor: "#ffffff",
+          borderTopWidth: 1,
+          borderTopColor: "#e2e8f0",
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 6,
+        },
+
+        // 4. Gaya label teks di bawah ikon
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "600",
+        },
+
+        // 5. Konfigurasi Header atas bawaan halaman
+        headerStyle: {
+          backgroundColor: "#eb078c",
+        },
+        headerTintColor: "#ffffff",
+        headerTitleAlign: "center",
+      }}
+    >
+      {/* Tab 1: Beranda */}
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Beranda",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={22}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* Tab 2: Mahasiswa */}
+      <Tabs.Screen
+        name="mahasiswa"
+        options={{
+          title: "Mahasiswa",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "people" : "people-outline"}
+              size={22}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* Tab 3: Profil */}
+      <Tabs.Screen
+        name="profil"
+        options={{
+          title: "Profil",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "person" : "person-outline"}
+              size={22}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* Tab 4: Pengaturan (Tantangan 1) */}
+      <Tabs.Screen
+        name="pengaturan"
+        options={{
+          title: "Pengaturan",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "settings" : "settings-outline"}
+              size={22}
+              color={color}
+            />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}
