@@ -163,4 +163,13 @@ export const authStyles = StyleSheet.create({
     fontWeight: "700",
     color: "#5e7bd4",
   },
+  primaryButtonDisabled: {
+    opacity: 0.65,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+  },
 });

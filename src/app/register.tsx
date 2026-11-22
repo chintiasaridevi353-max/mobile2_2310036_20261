@@ -1,8 +1,10 @@
 import { authStyles } from "@/styles/authStyles";
+import { registerApi } from "@/services/authService";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
+    ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Platform,
@@ -17,18 +19,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function RegisterScreen() {
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
+  const [noHp, setNoHp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<
-    "nama" | "email" | "password" | "confirm" | null
+    "nama" | "email" | "no_hp" | "password" | "confirm" | null
   >(null);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (
       !nama.trim() ||
       !email.trim() ||
+      !noHp.trim() ||
       !password.trim() ||
       !confirmPassword.trim()
     ) {
@@ -52,13 +57,30 @@ export default function RegisterScreen() {
       return;
     }
 
-    // Catatan: Pada modul berikutnya, data ini akan dikirim sebagai JSON
-    // ke endpoint POST /api/register Laravel 13.
-    Alert.alert(
-      "Pendaftaran Berhasil!",
-      `Akun atas nama ${nama.trim()} siap digunakan. Silakan masuk melalui halaman Login.`,
-      [{ text: "Ke Login", onPress: () => router.back() }],
-    );
+    setLoading(true);
+    try {
+      await registerApi({
+        name: nama.trim(),
+        email: email.trim(),
+        no_hp: noHp.trim(),
+        password,
+        password_confirmation: confirmPassword,
+      });
+
+      Alert.alert(
+        "Pendaftaran Berhasil",
+        "Akun Anda sudah tersimpan. Silakan masuk melalui halaman Login.",
+        [{ text: "Ke Login", onPress: () => router.back() }],
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat mendaftarkan akun.";
+      Alert.alert("Pendaftaran Gagal", message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -75,6 +97,7 @@ export default function RegisterScreen() {
           {/* Tombol Kembali Kustom */}
           <TouchableOpacity
             style={authStyles.topBackButton}
+            disabled={loading}
             onPress={() => router.back()}
           >
             <Ionicons name="arrow-back" size={20} color="#0F172A" />
@@ -111,8 +134,38 @@ export default function RegisterScreen() {
                   placeholder="Contoh: Muhammad Rizki"
                   placeholderTextColor="#94A3B8"
                   value={nama}
+                  editable={!loading}
                   onChangeText={setNama}
                   onFocus={() => setFocusedField("nama")}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </View>
+            </View>
+
+            {/* Nomor HP */}
+            <View style={authStyles.formGroup}>
+              <Text style={authStyles.label}>Nomor HP</Text>
+              <View
+                style={[
+                  authStyles.inputWrapper,
+                  focusedField === "no_hp" && authStyles.inputWrapperFocused,
+                ]}
+              >
+                <Ionicons
+                  name="call-outline"
+                  size={20}
+                  color={focusedField === "no_hp" ? "#2563EB" : "#64748B"}
+                  style={authStyles.inputIcon}
+                />
+                <TextInput
+                  style={authStyles.input}
+                  placeholder="Contoh: 081234567890"
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="phone-pad"
+                  value={noHp}
+                  editable={!loading}
+                  onChangeText={setNoHp}
+                  onFocus={() => setFocusedField("no_hp")}
                   onBlur={() => setFocusedField(null)}
                 />
               </View>
@@ -140,6 +193,7 @@ export default function RegisterScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   value={email}
+                  editable={!loading}
                   onChangeText={setEmail}
                   onFocus={() => setFocusedField("email")}
                   onBlur={() => setFocusedField(null)}
@@ -169,12 +223,14 @@ export default function RegisterScreen() {
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   value={password}
+                  editable={!loading}
                   onChangeText={setPassword}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
                 />
                 <TouchableOpacity
                   style={authStyles.eyeButton}
+                  disabled={loading}
                   onPress={() => setShowPassword(!showPassword)}
                 >
                   <Ionicons
@@ -211,12 +267,14 @@ export default function RegisterScreen() {
                   secureTextEntry={!showConfirm}
                   autoCapitalize="none"
                   value={confirmPassword}
+                  editable={!loading}
                   onChangeText={setConfirmPassword}
                   onFocus={() => setFocusedField("confirm")}
                   onBlur={() => setFocusedField(null)}
                 />
                 <TouchableOpacity
                   style={authStyles.eyeButton}
+                  disabled={loading}
                   onPress={() => setShowConfirm(!showConfirm)}
                 >
                   <Ionicons
@@ -229,17 +287,30 @@ export default function RegisterScreen() {
             </View>
 
             <TouchableOpacity
-              style={authStyles.primaryButton}
+              style={[
+                authStyles.primaryButton,
+                loading && authStyles.primaryButtonDisabled,
+              ]}
               activeOpacity={0.85}
+              disabled={loading}
               onPress={handleRegister}
             >
-              <Text style={authStyles.primaryButtonText}>Daftar Akun</Text>
-              <Ionicons name="checkmark" size={19} color="#FFFFFF" />
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={authStyles.primaryButtonText}>Daftar Akun</Text>
+                  <Ionicons name="checkmark" size={19} color="#FFFFFF" />
+                </>
+              )}
             </TouchableOpacity>
 
             <View style={[authStyles.footerRow, { marginTop: 18 }]}>
               <Text style={authStyles.footerText}>Sudah memiliki akun?</Text>
-              <TouchableOpacity onPress={() => router.back()}>
+              <TouchableOpacity
+                disabled={loading}
+                onPress={() => router.back()}
+              >
                 <Text style={authStyles.footerLink}>Masuk di sini</Text>
               </TouchableOpacity>
             </View>

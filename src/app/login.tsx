@@ -1,8 +1,10 @@
+import { loginApi, saveAuthSession } from "@/services/authService";
 import { authStyles } from "@/styles/authStyles";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -18,11 +20,12 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<"email" | "password" | null>(
     null,
   );
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert(
         "Input Belum Lengkap",
@@ -31,12 +34,24 @@ export default function LoginScreen() {
       return;
     }
 
-    // Catatan: Pada modul berikutnya, bagian ini akan dihubungkan
-    // ke Fetch API endpoint POST /api/login pada server Laravel 13.
-    router.replace({
-      pathname: "/tabs",
-      params: { email: email.trim() },
-    });
+    setLoading(true);
+    try {
+      const result = await loginApi({
+        email: email.trim(),
+        password,
+      });
+
+      await saveAuthSession(result.user, result.token);
+      router.replace("/tabs/home");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat masuk ke akun.";
+      Alert.alert("Login Gagal", message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,10 +65,9 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header Hero Modern Terang */}
           <View style={authStyles.headerArea}>
             <View style={authStyles.logoBadge}>
-              <Ionicons name="shield-checkmark" size={30} color="#5e7bd4" />
+              <Ionicons name="shield-checkmark" size={30} color="#2563EB" />
             </View>
             <Text style={authStyles.title}>Selamat Datang</Text>
             <Text style={authStyles.subtitle}>
@@ -61,7 +75,6 @@ export default function LoginScreen() {
             </Text>
           </View>
 
-          {/* Kartu Formulir Putih Modern */}
           <View style={authStyles.card}>
             <View style={authStyles.formGroup}>
               <Text style={authStyles.label}>Alamat Email</Text>
@@ -74,7 +87,7 @@ export default function LoginScreen() {
                 <Ionicons
                   name="mail-outline"
                   size={20}
-                  color={focusedField === "email" ? "#5e7bd4" : "#64748B"}
+                  color={focusedField === "email" ? "#2563EB" : "#64748B"}
                   style={authStyles.inputIcon}
                 />
                 <TextInput
@@ -83,6 +96,7 @@ export default function LoginScreen() {
                   placeholderTextColor="#94A3B8"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  editable={!loading}
                   value={email}
                   onChangeText={setEmail}
                   onFocus={() => setFocusedField("email")}
@@ -102,7 +116,7 @@ export default function LoginScreen() {
                 <Ionicons
                   name="lock-closed-outline"
                   size={20}
-                  color={focusedField === "password" ? "#5e7bd4" : "#64748B"}
+                  color={focusedField === "password" ? "#2563EB" : "#64748B"}
                   style={authStyles.inputIcon}
                 />
                 <TextInput
@@ -111,6 +125,7 @@ export default function LoginScreen() {
                   placeholderTextColor="#94A3B8"
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
+                  editable={!loading}
                   value={password}
                   onChangeText={setPassword}
                   onFocus={() => setFocusedField("password")}
@@ -130,12 +145,24 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              style={authStyles.primaryButton}
+              style={[
+                authStyles.primaryButton,
+                loading && authStyles.primaryButtonDisabled,
+              ]}
               activeOpacity={0.85}
+              disabled={loading}
               onPress={handleLogin}
             >
-              <Text style={authStyles.primaryButtonText}>Masuk Sekarang</Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={authStyles.primaryButtonText}>
+                    Masuk Sekarang
+                  </Text>
+                  <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                </>
+              )}
             </TouchableOpacity>
 
             <View style={authStyles.dividerRow}>
@@ -146,7 +173,10 @@ export default function LoginScreen() {
 
             <View style={authStyles.footerRow}>
               <Text style={authStyles.footerText}>Belum punya akun?</Text>
-              <TouchableOpacity onPress={() => router.push("/register")}>
+              <TouchableOpacity
+                disabled={loading}
+                onPress={() => router.push("/register")}
+              >
                 <Text style={authStyles.footerLink}>Daftar Sekarang</Text>
               </TouchableOpacity>
             </View>
